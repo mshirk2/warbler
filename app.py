@@ -231,7 +231,7 @@ def profile():
             db.session.commit()
             return redirect(f"/users/{user.id}")
 
-        flash("Incorrect password", 'danger')
+        flash("Incorrect password. Please try again.", 'danger')
 
     return render_template('users/edit.html', form=form, user_id=user.id)
 
