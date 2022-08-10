@@ -88,7 +88,7 @@ class User(db.Model):
 
     location = db.Column(
         db.Text,
-        default="Location not provided"
+        default="Location Not Provided"
     )
 
     password = db.Column(
