@@ -53,7 +53,7 @@
             </div>
             <form method="POST" action="/messages/{{ msg.id }}/like" class="messages-like">
               <button class="btn btn-sm
-              {{'btn-primary' if msg.id in g.user.likes.message_id else 'btn-secondary'}}">
+              {{'btn-primary' if msg.id in likes else 'btn-secondary'}}">
                 <i class="fa fa-thumbs-up"></i> 
               </button>
             </form>
