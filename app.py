@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -299,21 +299,25 @@ def messages_show(message_id):
 
 
 @app.route('/messages/<int:message_id>/like', methods=['POST'])
-def likes_toggle(message_id):
-    """Toggle like on a message"""
+def toggle_like(message_id):
+    """Toggle like on a message."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    toggle = toggle_like(message_id)
+    liked_messages = [message.id for message in g.user.likes]
+    
+    if message_id in liked_messages:
+        message = Likes.query.filter_by(message_id=message_id).first()
+        db.session.delete(message)
+    
+    else:
+        new_like = Likes(user_id=g.user.id, message_id=message_id)
+        db.session.add(new_like)
 
-    if not toggle:
-        flash("You can't like your own message!", "danger")
-        return redirect("/")
-    
     db.session.commit()
-    
+
     return redirect("/")
 
 

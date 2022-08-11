@@ -47,28 +47,6 @@ class Likes(db.Model):
         db.ForeignKey('messages.id', ondelete='cascade'),
         unique=True
     )
-
-    @classmethod
-    def toggle_like(message_id):
-        """Toggle like on a message. User cannot like their own message"""
-
-        # User cannot like their own message
-        liked_message = Message.query.get(message_id)
-        if liked_message.user_id == g.user.id:
-            return False
-
-        # Toggle like
-        liked_messages = [message.id for message in g.user.likes]
-        
-        if message_id in liked_messages:
-            message = Likes.query.get(message_id)
-            db.session.delete(message)
-        
-        else:
-            new_like = Likes(user_id=g.user.id, message_id=message_id)
-            db.session.add(new_like)
-
-        return message_id
         
 
 class User(db.Model):
