@@ -44,7 +44,7 @@
           <!-- Profile Actions -->
           <div class="ml-auto">
             {% if g.user.id == user.id %}
-            <a href="/users/profile" class="btn btn-outline-secondary">Edit Profile</a>
+            <a href="/users/profile" class="btn btn-outline-secondary mx-2">Edit Profile</a>
             <form method="POST" action="/users/delete" class="form-inline">
               <button class="btn btn-outline-danger ml-2">Delete Profile</button>
             </form>
@@ -72,7 +72,7 @@
   <div class="col-sm-3">
     <h4 id="sidebar-username">@{{ user.username }}</h4>
     <p>{{ user.bio }}</p>
-    <p class="user-location"><span class="fa fa-map-marker"></span>{{ user.location }}</p>
+    <p class="user-location"><span class="fa fa-map-marker mx-1"></span>{{ user.location }}</p>
   </div>
 
   <!-- Page Content (Messages/Followers/Following) -->
