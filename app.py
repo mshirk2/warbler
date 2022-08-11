@@ -299,26 +299,21 @@ def messages_show(message_id):
 
 
 @app.route('/messages/<int:message_id>/like', methods=['POST'])
-def toggle_like(message_id):
+def likes_toggle(message_id):
     """Toggle like on a message"""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    liked_message=Message.query.get(message_id)
-    if liked_message.user_id == g.user.id:
-        return abort(403)
+    toggle = toggle_like(message_id)
 
-    user_likes = g.user.likes
-
-    if liked_message in user_likes:
-        g.user.likes = [like for like in user_likes if like != liked_message]
-    else:
-        g.user.likes.append(liked_message)
-
+    if not toggle:
+        flash("You can't like your own message!", "danger")
+        return redirect("/")
+    
     db.session.commit()
-
+    
     return redirect("/")
 
 
