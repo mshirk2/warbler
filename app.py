@@ -343,25 +343,16 @@ def messages_destroy(message_id):
 @app.route('/')
 def homepage():
     """Show homepage:
-
     - anon users: no messages
     - logged in: 100 most recent messages of followed_users
     """
 
     if g.user:
-<<<<<<< HEAD
-        following = [f.id for f in g.user.following] + [g.user.id]
-
-        messages = (Message
-                    .query
-                    .filter(Message.user_id.in_(following))
-=======
         following_ids = [f.id for f in g.user.following] + [g.user.id]
 
         messages = (Message
                     .query
                     .filter(Message.user_id.in_(following_ids))
->>>>>>> b26804a4dabfc307815c64d29b9e8ff254c38946
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
