@@ -61,6 +61,10 @@ class UserModelTestCase(TestCase):
 
         self.client = app.test_client()
 
+    def tearDown(self):
+
+        db.session.rollback()
+
     def test_user_model(self):
         """Does basic model work? User should have no messages & no followers"""
 
@@ -86,7 +90,6 @@ class UserModelTestCase(TestCase):
         self.assertTrue(self.u1.is_following(self.u2))
         self.assertFalse(self.u2.is_following(self.u1))
 
-        
     def test_user_followed_by(self):
         """Does is_followed_by detect when user1 is/is not followed by user2?"""
 
@@ -96,6 +99,20 @@ class UserModelTestCase(TestCase):
         self.assertTrue(self.u2.is_followed_by(self.u1))
         self.assertFalse(self.u1.is_followed_by(self.u2))
 
+    def test_user_follows(self):
+        """Are follows being counted correctly?"""
+
+        self.u1.following.append(self.u2)
+        db.session.commit()
+
+        self.assertEqual(len(self.u1.following), 1)
+        self.assertEqual(len(self.u1.followers), 0)
+        self.assertEqual(len(self.u2.following), 0)
+        self.assertEqual(len(self.u2.followers), 1)
+
+        self.assertEqual(self.u2.followers[0].id, self.u1.id)
+        self.assertEqual(self.u1.following[0].id, self.u2.id)
+    
 
 ##################################################
 # Signup Tests
@@ -113,10 +130,38 @@ class UserModelTestCase(TestCase):
         self.assertNotEqual(user_valid.password, "password")
     
     def test_invalid_username(self):
-        """Does User.create fail to create a new user if any of the validations (e.g. uniqueness, non-nullable fields) fail?"""
+        """Does User.create fail to create a new user if username field is blank?"""
 
         invalid_username = User.signup(None, "username@username.com", "password", None)
         invalid_username.id = 111
         with self.assertRaises(exc.IntegrityError) as context:
             db.session.commit()
-        
+
+    def test_invalid_email(self):
+        """Does User.create fail to create a new user if email field is blank?"""
+
+        invalid_email = User.signup("no_email", None, "password", None)
+        invalid_email.id = 222
+        with self.assertRaises(exc.IntegrityError) as context:
+            db.session.commit()
+
+    def test_invalid_password(self):
+        """Does User.create fail to create a new user if password field is blank?"""
+
+        with self.assertRaises(ValueError) as context:
+            User.signup("no_password", "password@password.com", None, None)
+            User.signup("no_password", "password@password.com", "", None)
+
+
+##################################################
+# Authentication Tests
+
+    def test_valid_authentication(self):
+        user = User.authenticate(self.u1.username, "password")
+        self.assertEqual(user.id, self.u1.id)
+
+    def test_invalid_username(self):
+        self.assertFalse(User.authenticate("wrongusername", "password"))
+
+    def test_invalid_password(self):
+        self.assertFalse(User.authenticate(self.u1.username, "wrongpassword"))
