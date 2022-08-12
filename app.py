@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -179,6 +179,18 @@ def users_followers(user_id):
     return render_template('users/followers.html', user=user)
 
 
+@app.route('/users/<int:user_id>/likes')
+def users_likes(user_id):
+    """Show list of liked messages by this user"""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(user_id)
+    return render_template('users/likes.html', user=user)    
+
+
 @app.route('/users/follow/<int:follow_id>', methods=['POST'])
 def add_follow(follow_id):
     """Add a follow for the currently-logged-in user."""
@@ -286,6 +298,29 @@ def messages_show(message_id):
     return render_template('messages/show.html', message=msg)
 
 
+@app.route('/messages/<int:message_id>/like', methods=['POST'])
+def toggle_like(message_id):
+    """Toggle like on a message."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    liked_messages = [message.id for message in g.user.likes]
+    
+    if message_id in liked_messages:
+        message = Likes.query.filter_by(message_id=message_id).first()
+        db.session.delete(message)
+    
+    else:
+        new_like = Likes(user_id=g.user.id, message_id=message_id)
+        db.session.add(new_like)
+
+    db.session.commit()
+
+    return redirect("/")
+
+
 @app.route('/messages/<int:message_id>/delete', methods=["POST"])
 def messages_destroy(message_id):
     """Delete a message."""
@@ -314,20 +349,36 @@ def homepage():
     """
 
     if g.user:
+<<<<<<< HEAD
         following = [f.id for f in g.user.following] + [g.user.id]
 
         messages = (Message
                     .query
                     .filter(Message.user_id.in_(following))
+=======
+        following_ids = [f.id for f in g.user.following] + [g.user.id]
+
+        messages = (Message
+                    .query
+                    .filter(Message.user_id.in_(following_ids))
+>>>>>>> b26804a4dabfc307815c64d29b9e8ff254c38946
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
 
-        return render_template('home.html', messages=messages)
+        liked_msg_ids = [msg.id for msg in g.user.likes]
+
+        return render_template('home.html', messages=messages, likes=liked_msg_ids)
 
     else:
         return render_template('home-anon.html')
 
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """404 Page Not Found"""
+
+    return render_template('404.html'), 404
 
 ##############################################################################
 # Turn off all caching in Flask
