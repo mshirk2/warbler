@@ -26,6 +26,7 @@ class UserEditForm(FlaskForm):
     image_url = StringField('(Optional) Image URL')   
     header_image_url = StringField('(Optional) Header Image URL') 
     bio = StringField('(Optional) Bio')  
+    location = StringField('(Optional) Location')
     password = PasswordField('Password', validators=[DataRequired()]) 
 
 

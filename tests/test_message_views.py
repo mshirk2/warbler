@@ -45,17 +45,20 @@ class MessageViewTestCase(TestCase):
 
         self.client = app.test_client()
 
-        self.testuser = User.signup(username="testuser",
+        self.u1 = User.signup(username="testuser",
                                     email="test@test.com",
                                     password="testuser",
                                     image_url=None)
-
-        self.testuser.id = 111
+        self.u1.id = 111
+ 
         db.session.commit()
 
     def tearDown(self):
-
         db.session.rollback()
+
+
+    ##################################################
+    # Add Message Tests
 
     def test_add_message(self):
         """Can user add a message?"""
@@ -65,7 +68,7 @@ class MessageViewTestCase(TestCase):
 
         with self.client as c:
             with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = self.testuser.id
+                sess[CURR_USER_KEY] = self.u1.id
 
             # Now, that session setting is saved, so we can have
             # the rest of ours test
@@ -97,32 +100,87 @@ class MessageViewTestCase(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("Access unauthorized", str(resp.data))
 
+
+    ##################################################
+    # Show Message Tests
+
+    def setup_messages(self):
+
+        m1 = Message(id=222, text="testtest", user_id=self.u1.id)
+        db.session.add(m1)
+        db.session.commit()
+    
     def test_message_show(self):
         """Does app successfully show message if valid user is logged in?"""
 
-        m = Message(id=999, text="testtest", user_id=self.testuser.id)
-        db.session.add(m)
-        db.session.commit()
+        self.setup_messages()
 
         with self.client as c:
             with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = self.testuser.id
+                sess[CURR_USER_KEY] = self.u1.id
 
-            m = Message.query.get(999)
-            resp = c.get(f"/messages/{m.id}")
+            resp = c.get("/messages/222")
 
             self.assertEqual(resp.status_code, 200)
-            self.assertIn(m.text, str(resp.data))
+            self.assertIn("testtest", str(resp.data))
 
     def test_invalid_message_show(self):
         """Does app fail to show message that doesn't exist? Does it display 404 page?"""
 
         with self.client as c:
             with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = self.testuser.id
+                sess[CURR_USER_KEY] = self.u1.id
 
             resp = c.get('/messages/3584684568744325', follow_redirects=True)
 
             self.assertEqual(resp.status_code, 404)
             self.assertIn("That page does not exist!", str(resp.data))
+
+
+    ##################################################
+    # Delete Message Tests
+
+    def test_message_delete(self):
+        """Does message delete successfully when user is authorized?"""
+
+        self.setup_messages()
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1.id
+
+            resp = c.post('/messages/222/delete', follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+
+            m = Message.query.get(222)
+            self.assertIsNone(m)
+
+    def test_message_delete_unauthorized(self):
+        """Does app fail to delete a message when the user is not authorized?"""
+
+        self.setup_messages()
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = 95467865484
+
+            resp = c.post('/messages/222/delete', follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", str(resp.data))
+            
+            m = Message.query.get(222)
+            self.assertIsNotNone(m)
+
+    def test_message_without_user(self):
+        """Does app fail to delete a message when user is not signed in?"""
+
+        self.setup_messages()
+
+        with self.client as c:
+            resp = c.post('/messages/222/delete', follow_redirects=True)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Access unauthorized", str(resp.data))
+            
+            m = Message.query.get(222)
+            self.assertIsNotNone(m)
 

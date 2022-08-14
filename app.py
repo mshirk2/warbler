@@ -239,6 +239,7 @@ def profile():
             user.image_url = form.image_url.data or User.image_url.default.arg
             user.header_image_url = form.header_image_url.data or User.header_image_url.default.arg
             user.bio = form.bio.data
+            user.location = form.location.data
 
             db.session.commit()
             return redirect(f"/users/{user.id}")
@@ -322,13 +323,13 @@ def toggle_like(message_id):
 
 
 @app.route('/messages/<int:message_id>/delete', methods=["POST"])
-def messages_destroy(message_id):
+def messages_delete(message_id):
     """Delete a message."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
-
+    
     msg = Message.query.get(message_id)
     db.session.delete(msg)
     db.session.commit()
