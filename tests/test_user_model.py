@@ -157,11 +157,14 @@ class UserModelTestCase(TestCase):
 # Authentication Tests
 
     def test_valid_authentication(self):
+        """Does User.authenticate work as expected?"""
         user = User.authenticate(self.u1.username, "password")
         self.assertEqual(user.id, self.u1.id)
 
     def test_invalid_username(self):
+        """Does User.authenticate fail with an incorrect username?"""
         self.assertFalse(User.authenticate("wrongusername", "password"))
 
     def test_invalid_password(self):
+        """Does User.authenticate fail with an incorrect password?"""
         self.assertFalse(User.authenticate(self.u1.username, "wrongpassword"))
